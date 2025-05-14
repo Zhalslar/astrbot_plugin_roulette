@@ -1,0 +1,8 @@
+{
+    "ban_duration_str": {
+        "description": "禁言时间范围",
+        "type": "string",
+        "hint": "单位为秒，例如：30-300",
+        "default": "30-300"
+    }
+}
