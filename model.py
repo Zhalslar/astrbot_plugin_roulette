@@ -19,7 +19,7 @@ class Room:
 
 
     def can_shoot(self, shooter: str):
-        if self.next_idx:
+        if self.players and isinstance(self.next_idx, int):
             return shooter == self.players[self.next_idx]
         return True # 多人模式默认都可以射击
 
