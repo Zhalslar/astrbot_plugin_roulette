@@ -1,47 +1,104 @@
 import random
-import uuid
+import threading
+from typing import Dict, List, Optional
 
-class DuetGame:
-    """双人轮盘赌游戏类，管理游戏状态和逻辑"""
 
-    def __init__(self, player1: str, player2: str):
-        """初始化游戏"""
-        self.id = str(uuid.uuid4())  # 游戏ID
-        self.players: list[str] = [player1, player2]  # 玩家列表（存储为整数）
-        self.current_player_index: int | None = None  # 当前玩家索引（初始为None，表示尚未决定）
-        self.bullet_position: int = random.randint(1, 6)  # 子弹位置随机设定在1到6之间
-        self.current_round: int = 0  # 当前进行的轮数，初始化为0
+class Room:
+    """内部房间类，不对外暴露 room_id"""
 
-    def get_current_player(self) -> str | None:
-        """获取当前玩家的ID"""
-        if self.current_player_index:
-            return self.players[self.current_player_index]
-        else:
-            return None
+    def __init__(self, players: List[str], ban_time:int):
+        self.players = players
+        self.ban_time = ban_time
+        self.bullet = random.randint(1, 6)
+        self.round = 0
+        self.next_idx: Optional[int] = None  # 仅用于固定玩家列表
+
+    @property
+    def over(self) -> bool:
+        return self.round >= self.bullet
+
+
+    def can_shoot(self, shooter: str):
+        if self.next_idx:
+            return shooter == self.players[self.next_idx]
+        return True # 多人模式默认都可以射击
 
     def shoot(self, shooter: str) -> bool:
-        """开枪逻辑，判断本轮是否中弹"""
+        if self.over:
+            return False
 
-        # 如果是第一次射击，设置当前玩家索引
-        if self.current_player_index is None:
-            self.current_player_index = 0 if shooter == self.players[0] else 1
+        # 无限制模式
+        if not self.players:
+            self.round += 1
+            return self.round == self.bullet
 
-        self.current_round += 1 # 增加当前轮数
-        self.current_player_index = 1 - self.current_player_index # 切换玩家
-        return self.current_round == self.bullet_position  # 判断是否中弹
+        # 固定玩家列表
+        if shooter not in self.players:
+            return False
+
+        # 首枪决定先手
+        if self.next_idx is None:
+            self.next_idx = self.players.index(shooter)
+        # 判断本轮枪手
+        elif not self.can_shoot(shooter):
+            return False
+
+        self.round += 1
+        # 切换枪手
+        self.next_idx = 1 - self.next_idx
+
+        return self.round == self.bullet
+
+
+class GameManager:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.room: Dict[str, Room] = {}  # player_id -> room 实例
+
+
+    def create_room(
+        self, kids: list[str], ban_time: int = 0
+    ) -> Room | None:
+        """创建房间"""
+        with self._lock:
+            for kid in kids:
+                if kid in self.room:
+                    return None
+            if kids[0] and kids[1]:  # 固定列表
+                room = Room(players=kids[:2], ban_time=ban_time)
+                self.room[kids[0]] = room
+                self.room[kids[1]] = room
+                return room
+            elif kids[2]:
+                # 多人模式
+                room = Room(players=[], ban_time=ban_time)
+                self.room[kids[2]] = room
+                return room
+
+
+    def get_room(self, kids: list[str]) -> Room | None:
+        """获取房间"""
+        with self._lock:
+            for kid in kids:
+                if room := self.room.get(kid):
+                    return room
+            return None
+
+
+    def has_room(self, kid: str) -> bool:
+        """玩家是否已在房间"""
+        with self._lock:
+            return kid in self.room
+
+    def del_room(self, kids: list[str]):
+        """即销毁房间"""
+        with self._lock:
+            for kid in kids:
+                if kid in self.room:
+                    self.room.pop(kid)
 
 
 
-class MultiGame:
-    """多人轮盘赌游戏类，管理游戏状态和逻辑"""
 
-    def __init__(self, game_id: str):
-        """初始化游戏"""
-        self.id = game_id  # 游戏ID
-        self.bullet_position = random.randint(1, 6)  # 子弹位置随机设定在1到6之间
-        self.current_round = 0  # 当前进行的轮数，初始化为0
 
-    def shoot(self) -> bool:
-        """开枪逻辑，判断本轮是否中弹"""
-        self.current_round += 1 # 增加当前轮数
-        return self.current_round == self.bullet_position  # 判断是否中弹
+
