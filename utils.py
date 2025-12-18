@@ -5,6 +5,7 @@ from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import (
     AiocqhttpMessageEvent,
 )
 
+
 async def get_name(event: AstrMessageEvent, user_id: str|int) -> str:
     """获取指定群友的昵称"""
     if event.get_platform_name() == "aiocqhttp" and str(user_id).isdigit():

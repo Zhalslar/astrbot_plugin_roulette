@@ -1,17 +1,16 @@
 import random
 import threading
-from typing import Dict, List, Optional
 
 
 class Room:
     """内部房间类，不对外暴露 room_id"""
 
-    def __init__(self, players: List[str], ban_time:int):
+    def __init__(self, players: list[str], ban_time:int):
         self.players = players
         self.ban_time = ban_time
         self.bullet = random.randint(1, 6)
         self.round = 0
-        self.next_idx: Optional[int] = None  # 仅用于固定玩家列表
+        self.next_idx: int | None = None  # 仅用于固定玩家列表
 
     @property
     def over(self) -> bool:
@@ -53,7 +52,7 @@ class Room:
 class GameManager:
     def __init__(self):
         self._lock = threading.Lock()
-        self.room: Dict[str, Room] = {}  # player_id -> room 实例
+        self.room: dict[str, Room] = {}  # player_id -> room 实例
 
 
     def create_room(
