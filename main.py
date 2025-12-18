@@ -1,19 +1,15 @@
 import random
-from astrbot.api.event import filter
-from astrbot.api.star import Context, Star, register
-from astrbot.core.config.astrbot_config import AstrBotConfig
+
 from astrbot import logger
+from astrbot.api.event import filter
+from astrbot.api.star import Context, Star
+from astrbot.core.config.astrbot_config import AstrBotConfig
 from astrbot.core.platform.astr_message_event import AstrMessageEvent
-from .utils import ban, get_at_id, get_name
+
 from .model import GameManager
+from .utils import ban, get_at_id, get_name
 
 
-@register(
-    "astrbot_plugin_roulette",
-    "Zhalslar",
-    "俄罗斯转盘赌，中枪者禁言",
-    "1.0.1"
-)
 class RoulettePlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
